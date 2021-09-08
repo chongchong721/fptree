@@ -20,7 +20,9 @@ public:
         current_id = 0;
     }
 
-    kv_generator(){};
+    kv_generator(){
+        current_id = 1;
+    };
 
 //    void pre_generate_KV(std::vector<std::vector<KV>> & arrKV, uint64_t start_ID, uint64_t length, bool sequential){
 //        arrKV.resize(length);
@@ -97,7 +99,6 @@ private:
 public:
     benchmark_opt(){
         op_num.resize(4);
-        op_num.clear();
     }
 
     void set_opt(int idx, uint64_t num){ op_num[idx]=num;}
@@ -186,8 +187,6 @@ int main(){
 
     std::vector<uint64_t> insert_arrKeys(opt.num_insert());
     std::vector<uint64_t> insert_arrVals(opt.num_insert());
-    insert_arrKeys.clear();
-    insert_arrVals.clear();
 
     uint64_t workload = opt.num_insert() / t_num ;
 
@@ -202,12 +201,13 @@ int main(){
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
     std::cout << "Insert-" << opt.num_insert() << ":" << duration.count() << "milliseconds" << std::endl;
+    std::vector<uint64_t>().swap(insert_arrKeys);
+    std::vector<uint64_t>().swap(insert_arrVals);
 
 
     // Read
 
     std::vector<uint64_t> read_arrKeys(opt.num_search());
-    read_arrKeys.clear();
     generator.pre_generate_Keys(insert_arrKeys, opt.num_search(), false);
 
     start = std::chrono::high_resolution_clock::now();
@@ -218,6 +218,7 @@ int main(){
     end = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
     std::cout << "Insert-" << opt.num_insert() << ":" << duration.count() << "milliseconds" << std::endl;
+    std::vector<uint64_t>().swap(read_arrKeys);
 
 }
 
