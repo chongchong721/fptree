@@ -146,28 +146,28 @@ int main(){
     uint16_t t_num = 0;
     char tmp;
     std::cout << "Insert:y/n" << std::endl;
-    tmp = std::getchar();
+    std::cin >> tmp;
     if(tmp == 'y'){
         std::cin >> num;
         opt.set_opt(0,num);
     }
 
     std::cout << "Search:y/n" << std::endl;
-    tmp = std::getchar();
+    std::cin >> tmp;
     if(tmp == 'y'){
         std::cin >> num;
         opt.set_opt(1,num);
     }
 
     std::cout << "Update:y/n" << std::endl;
-    tmp = std::getchar();
+    std::cin >> tmp;
     if(tmp == 'y'){
         std::cin >> num;
         opt.set_opt(2,num);
     }
 
     std::cout << "Remove:y/n" << std::endl;
-    tmp = std::getchar();
+    std::cin >> tmp;
     if(tmp == 'y'){
         std::cin >> num;
         opt.set_opt(3,num);
