@@ -53,7 +53,7 @@ public:
     void pre_generate_Values(std::vector<uint64_t> & arrVals, uint64_t length){
         arrVals.resize(length);
         arrVals.clear();
-        for(uint64_t i = 0; i ,length ; ++i){
+        for(uint64_t i = 0; i < length ; ++i){
             uint32_t pos = uniformRandom.uniform_within_32(0, sizeof(VALUE_POOL) - sizeof(uint64_t) );
             arrVals[i] = VALUE_POOL[pos];
         }
