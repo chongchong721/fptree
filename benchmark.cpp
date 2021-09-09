@@ -5,6 +5,8 @@
 #include <thread>
 #include <vector>
 #include <string>
+#include <string.h>
+#include <stdlib.h>
 
 #include "fptree.h"
 #include "uniform_random.hpp"
@@ -98,11 +100,14 @@ private:
 class benchmark_opt{
 private:
     std::vector<uint64_t> op_num;
+    bool skip_load;
 public:
     benchmark_opt(){
-        op_num.resize(4);
+        op_num.resize(4,0);
+        skip_load = false;
     }
 
+    void set_skip_load(bool flag){skip_load = flag;}
     void set_opt(int idx, uint64_t num){ op_num[idx]=num;}
     uint64_t num_insert() {return op_num[0];}
     uint64_t num_search() {return op_num[1];}
@@ -143,72 +148,83 @@ void thread_read(FPtree & tree, std::vector<uint64_t> arrKeys, uint64_t num_op ,
     }
 }
 
-int main(){
+int main(int argc, char**argv){
+
+    kv_generator generator;
     benchmark_opt opt;
-    uint64_t num = 0;
     uint16_t t_num = 0;
-    char tmp;
-    std::cout << "Insert:y/n" << std::endl;
-    std::cin >> tmp;
-    if(tmp == 'y'){
-        std::cin >> num;
-        opt.set_opt(0,num);
-        std::cout << "Insert num:" << opt.num_insert() << std::endl;
+
+    argc--;
+    argv++;
+
+    while(argc>0){
+        if(strcmp(argv[0],"-r") == 0){
+
+            opt.set_opt(1,static_cast<uint64_t>(atoll(argv[1])));
+            argc-=2;
+            argv+=2;
+
+        }
+
+        else if(strcmp(argv[0], "-i") ==0){
+            opt.set_opt(0,static_cast<uint64_t>(atoll(argv[1])));
+            argc-=2;
+            argv+=2;
+        }
+
+        else if(strcmp(argv[0],"skip_load") == 0){
+            if(strcmp(argv[1],"true") == 0)
+                opt.set_skip_load(true);
+            else
+                opt.set_skip_load(false);
+            argc-=2;
+            argv+=2;
+        }
+
+        else if(strcmp(argv[0],"-t") == 0){
+            t_num = atoi(argv[1]);
+            argc-=2;
+            argv+=2;
+        }
+
+        else{
+            std::cerr << "No matched parameter" << std::endl;
+            exit(0);
+        }
+
     }
 
-    std::cout << "Search:y/n" << std::endl;
-    std::cin >> tmp;
-    if(tmp == 'y'){
-        std::cin >> num;
-        opt.set_opt(1,num);
-        std::cout << "Search num:" << opt.num_search() << std::endl;
-    }
 
-    std::cout << "Update:y/n" << std::endl;
-    std::cin >> tmp;
-    if(tmp == 'y'){
-        std::cin >> num;
-        opt.set_opt(2,num);
-        std::cout << "Update num:" << opt.num_update() << std::endl;
-    }
-
-    std::cout << "Remove:y/n" << std::endl;
-    std::cin >> tmp;
-    if(tmp == 'y'){
-        std::cin >> num;
-        opt.set_opt(3,num);
-        std::cout << "Remove num:" << opt.num_remove() << std::endl;
-    }
-
-    std::cout << "thread num" << std::endl;
-    std::cin >> t_num;
 
     FPtree fptree;
     std::vector<std::thread> workers(t_num);
 
 
-    kv_generator generator;
+
 
     // Insert
 
-    std::vector<uint64_t> insert_arrKeys(opt.num_insert());
-    std::vector<uint64_t> insert_arrVals(opt.num_insert());
+    if(opt.num_insert() >= 0){
+        std::vector<uint64_t> insert_arrKeys(opt.num_insert());
+        std::vector<uint64_t> insert_arrVals(opt.num_insert());
 
-    uint64_t workload = opt.num_insert() / t_num ;
+        uint64_t workload = opt.num_insert() / t_num ;
 
-    generator.pre_generate_Keys( insert_arrKeys, opt.num_insert(), true);
-    generator.pre_generate_Values(insert_arrVals,opt.num_insert());
+        generator.pre_generate_Keys( insert_arrKeys, opt.num_insert(), true);
+        generator.pre_generate_Values(insert_arrVals,opt.num_insert());
 
-    auto start = std::chrono::high_resolution_clock::now();
-    for (uint64_t i = 0; i < t_num; ++i)
-        workers[i] = std::thread(thread_insert, std::ref(fptree), std::ref(insert_arrKeys), std::ref(insert_arrVals), opt.num_insert(), t_num, i);
-    for (uint64_t i = 0; i < t_num; i++)
-        workers[i].join();
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-    std::cout << "Insert-" << opt.num_insert() << ":" << duration.count() << "milliseconds" << std::endl;
-    std::vector<uint64_t>().swap(insert_arrKeys);
-    std::vector<uint64_t>().swap(insert_arrVals);
+        auto start = std::chrono::high_resolution_clock::now();
+        for (uint64_t i = 0; i < t_num; ++i)
+            workers[i] = std::thread(thread_insert, std::ref(fptree), std::ref(insert_arrKeys), std::ref(insert_arrVals), opt.num_insert(), t_num, i);
+        for (uint64_t i = 0; i < t_num; i++)
+            workers[i].join();
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
+        std::cout << "Insert-" << opt.num_insert() << ":" << duration.count() << "milliseconds" << std::endl;
+        std::vector<uint64_t>().swap(insert_arrKeys);
+        std::vector<uint64_t>().swap(insert_arrVals);
+    }
+
 
 
     // Read
@@ -216,15 +232,17 @@ int main(){
     std::vector<uint64_t> read_arrKeys(opt.num_search());
     generator.pre_generate_Keys(read_arrKeys, opt.num_search(), false);
 
-    start = std::chrono::high_resolution_clock::now();
+    auto start = std::chrono::high_resolution_clock::now();
     for (uint64_t i = 0; i < t_num; ++i)
         workers[i] = std::thread(thread_read, std::ref(fptree), std::ref(read_arrKeys) ,opt.num_search(), t_num, i);
     for (uint64_t i = 0; i < t_num; i++)
         workers[i].join();
-    end = std::chrono::high_resolution_clock::now();
-    duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
     std::cout << "Insert-" << opt.num_insert() << ":" << duration.count() << "milliseconds" << std::endl;
     std::vector<uint64_t>().swap(read_arrKeys);
+
+
 
 }
 
