@@ -37,7 +37,8 @@ public:
 //    }
     void pre_generate_Keys(std::vector<uint64_t> & arrKeys, uint64_t length, bool sequential){
         arrKeys.resize(length);
-        arrKeys.clear();
+        std::cout << "Generating keys. Length" << length << std::endl;
+
         if(sequential){
             for(uint64_t i =0 ; i < length ; ++i, ++current_id){
                 arrKeys[i] = multiplicative_hash(current_id);
@@ -52,7 +53,8 @@ public:
 
     void pre_generate_Values(std::vector<uint64_t> & arrVals, uint64_t length){
         arrVals.resize(length);
-        arrVals.clear();
+
+        std::cout << "Generating keys. Length" << length << std::endl;
         for(uint64_t i = 0; i < length ; ++i){
             uint32_t pos = uniformRandom.uniform_within_32(0, sizeof(VALUE_POOL) - sizeof(uint64_t) );
             arrVals[i] = VALUE_POOL[pos];
@@ -151,6 +153,7 @@ int main(){
     if(tmp == 'y'){
         std::cin >> num;
         opt.set_opt(0,num);
+        std::cout << "Insert num:" << opt.num_insert() << std::endl;
     }
 
     std::cout << "Search:y/n" << std::endl;
@@ -158,6 +161,7 @@ int main(){
     if(tmp == 'y'){
         std::cin >> num;
         opt.set_opt(1,num);
+        std::cout << "Search num:" << opt.num_search() << std::endl;
     }
 
     std::cout << "Update:y/n" << std::endl;
@@ -165,6 +169,7 @@ int main(){
     if(tmp == 'y'){
         std::cin >> num;
         opt.set_opt(2,num);
+        std::cout << "Update num:" << opt.num_update() << std::endl;
     }
 
     std::cout << "Remove:y/n" << std::endl;
@@ -172,6 +177,7 @@ int main(){
     if(tmp == 'y'){
         std::cin >> num;
         opt.set_opt(3,num);
+        std::cout << "Remove num:" << opt.num_remove() << std::endl;
     }
 
     std::cout << "thread num" << std::endl;
