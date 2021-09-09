@@ -214,7 +214,7 @@ int main(){
     // Read
 
     std::vector<uint64_t> read_arrKeys(opt.num_search());
-    generator.pre_generate_Keys(insert_arrKeys, opt.num_search(), false);
+    generator.pre_generate_Keys(read_arrKeys, opt.num_search(), false);
 
     start = std::chrono::high_resolution_clock::now();
     for (uint64_t i = 0; i < t_num; ++i)
