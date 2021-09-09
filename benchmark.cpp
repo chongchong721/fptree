@@ -5,23 +5,14 @@
 #include <thread>
 #include <vector>
 #include <string>
-#include <string.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdlib>
 
 #include "fptree.h"
 #include "uniform_random.hpp"
 
 class kv_generator{
 public:
-    kv_generator(std::string op){
-        if(op == "insert")
-            sequential = true;
-        else
-            sequential = false;
-
-        current_id = 0;
-    }
-
     kv_generator(){
         current_id = 1;
     };
@@ -64,8 +55,6 @@ public:
     void set_seed(uint64_t seed){ uniformRandom.set_current_seed(seed); }
 
 private:
-
-    bool sequential;
     static thread_local uint64_t current_id;
 
     static thread_local foedus::assorted::UniformRandom uniformRandom;
@@ -209,7 +198,9 @@ int main(int argc, char**argv){
 
         uint64_t workload = opt.num_insert() / t_num ;
 
+        generator.set_seed(static_cast<uint64_t>(time(nullptr)));
         generator.pre_generate_Keys( insert_arrKeys, opt.num_insert(), true);
+        generator.set_seed(static_cast<uint64_t>(time(nullptr)));
         generator.pre_generate_Values(insert_arrVals,opt.num_insert());
 
         auto start = std::chrono::high_resolution_clock::now();
@@ -229,6 +220,7 @@ int main(int argc, char**argv){
     // Read
 
     std::vector<uint64_t> read_arrKeys(opt.num_search());
+    generator.set_seed(static_cast<uint64_t>(time(nullptr)));
     generator.pre_generate_Keys(read_arrKeys, opt.num_search(), false);
 
     auto start = std::chrono::high_resolution_clock::now();
@@ -238,7 +230,7 @@ int main(int argc, char**argv){
         workers[i].join();
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-    std::cout << "Read-" << opt.num_insert() << ":" << duration.count() << " milliseconds" << std::endl;
+    std::cout << "Read-" << opt.num_search() << ":" << duration.count() << " milliseconds" << std::endl;
     std::vector<uint64_t>().swap(read_arrKeys);
 
 
