@@ -96,15 +96,16 @@ private:
 class benchmark_opt{
 private:
     std::vector<uint64_t> op_num;
-    bool skip_load;
+    bool _skip_load;
 public:
     benchmark_opt(){
         op_num.resize(4,0);
-        skip_load = false;
+        _skip_load = false;
     }
 
-    void set_skip_load(bool flag){skip_load = flag;}
+    void set_skip_load(bool flag){_skip_load = flag;}
     void set_opt(int idx, uint64_t num){ op_num[idx]=num;}
+    bool skip_load(){return _skip_load;}
     uint64_t num_insert() {return op_num[0];}
     uint64_t num_search() {return op_num[1];}
     uint64_t num_update() {return op_num[2];}
@@ -169,8 +170,10 @@ int main(int argc, char**argv){
         }
 
         else if(strcmp(argv[0],"-skip_load") == 0){
-            if(strcmp(argv[1],"true") == 0)
+            if(strcmp(argv[1],"true") == 0){
                 opt.set_skip_load(true);
+                generator.set_current_id(opt.num_insert()+1);
+            }
             else
                 opt.set_skip_load(false);
             argc-=2;
@@ -200,7 +203,7 @@ int main(int argc, char**argv){
 
     // Insert
 
-    if(opt.num_insert() >= 0){
+    if(!opt.skip_load()){
         std::vector<uint64_t> insert_arrKeys(opt.num_insert());
         std::vector<uint64_t> insert_arrVals(opt.num_insert());
 
