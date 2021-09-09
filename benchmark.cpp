@@ -39,8 +39,6 @@ public:
 //    }
     void pre_generate_Keys(std::vector<uint64_t> & arrKeys, uint64_t length, bool sequential){
         arrKeys.resize(length);
-        std::cout << "Generating keys. Length" << length << std::endl;
-
         if(sequential){
             for(uint64_t i =0 ; i < length ; ++i, ++current_id){
                 arrKeys[i] = multiplicative_hash(current_id);
@@ -55,8 +53,6 @@ public:
 
     void pre_generate_Values(std::vector<uint64_t> & arrVals, uint64_t length){
         arrVals.resize(length);
-
-        std::cout << "Generating keys. Length" << length << std::endl;
         for(uint64_t i = 0; i < length ; ++i){
             uint32_t pos = uniformRandom.uniform_within_32(0, sizeof(VALUE_POOL) - sizeof(uint64_t) );
             arrVals[i] = VALUE_POOL[pos];
@@ -172,7 +168,7 @@ int main(int argc, char**argv){
             argv+=2;
         }
 
-        else if(strcmp(argv[0],"skip_load") == 0){
+        else if(strcmp(argv[0],"-skip_load") == 0){
             if(strcmp(argv[1],"true") == 0)
                 opt.set_skip_load(true);
             else
@@ -220,7 +216,7 @@ int main(int argc, char**argv){
             workers[i].join();
         auto end = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-        std::cout << "Insert-" << opt.num_insert() << ":" << duration.count() << "milliseconds" << std::endl;
+        std::cout << "Insert-" << opt.num_insert() << ":" << duration.count() << " milliseconds" << std::endl;
         std::vector<uint64_t>().swap(insert_arrKeys);
         std::vector<uint64_t>().swap(insert_arrVals);
     }
@@ -239,7 +235,7 @@ int main(int argc, char**argv){
         workers[i].join();
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-    std::cout << "Insert-" << opt.num_insert() << ":" << duration.count() << "milliseconds" << std::endl;
+    std::cout << "Read-" << opt.num_insert() << ":" << duration.count() << " milliseconds" << std::endl;
     std::vector<uint64_t>().swap(read_arrKeys);
 
 
