@@ -198,7 +198,7 @@ int main(int argc, char**argv){
     FPtree fptree;
     std::vector<std::thread> workers(t_num);
 
-    fptree.printFPTree("",fptree.getRoot());
+    //fptree.printFPTree("",fptree.getRoot());
 
 
     // Insert
