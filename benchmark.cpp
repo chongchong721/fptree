@@ -105,13 +105,12 @@ public:
 thread_local foedus::assorted::UniformRandom kv_generator::uniformRandom;
 thread_local uint64_t kv_generator::current_id;
 
-void thread_insert(FPtree & tree, std::vector<uint64_t> arrKeys, std::vector<uint64_t> arrVals, uint64_t num_op , uint16_t num_thread ,uint64_t id){
+void thread_insert(FPtree & tree, std::vector<uint64_t> & arrKeys, std::vector<uint64_t> & arrVals, uint64_t num_op , uint16_t num_thread ,uint64_t id){
     uint64_t workload = num_op / num_thread , stop;
     if (id == num_thread - 1)	// last thread, load all keys left
         stop = num_op;
     else	// just normal workload
         stop = (id + 1) * workload;
-
     for (uint64_t i = id * workload; i < stop; ++i)
         if (!tree.insert(KV(arrKeys[i],arrVals[i])))
         {
@@ -120,7 +119,7 @@ void thread_insert(FPtree & tree, std::vector<uint64_t> arrKeys, std::vector<uin
         }
 }
 
-void thread_read(FPtree & tree, std::vector<uint64_t> arrKeys, uint64_t num_op , uint16_t num_thread ,uint64_t id){
+void thread_read(FPtree & tree, std::vector<uint64_t> & arrKeys, uint64_t num_op , uint16_t num_thread ,uint64_t id){
     uint64_t workload = num_op / num_thread , stop;
     if (id == num_thread - 1)	// last thread, load all keys left
         stop = num_op;
