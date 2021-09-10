@@ -28,36 +28,36 @@ public:
 //            arrKV[i].value = VALUE_POOL[pos];
 //        }
 //    }
-    void pre_generate_Keys(std::vector<uint64_t> & arrKeys, uint64_t length, bool sequential){
-        arrKeys.resize(length);
-        if(sequential){
-            for(uint64_t i =0 ; i < length ; ++i, ++current_id){
-                arrKeys[i] = multiplicative_hash(current_id);
-            }
-        }
-        else{
-            for(uint64_t i =0 ; i < length; ++i){
-                arrKeys[i] = multiplicative_hash(uniformRandom.uniform_within_64(1,current_id-1));
-            }
-        }
+
+
+    uint64_t * next_key_random(){
+        *key_buf = multiplicative_hash(uniformRandom.uniform_within_64(1,current_id-1));
+        return key_buf;
     }
 
-    void pre_generate_Values(std::vector<uint64_t> & arrVals, uint64_t length){
-        arrVals.resize(length);
-        for(uint64_t i = 0; i < length ; ++i){
-            uint32_t pos = uniformRandom.uniform_within_32(0, sizeof(VALUE_POOL) - sizeof(uint64_t) );
-            arrVals[i] = VALUE_POOL[pos];
-        }
+    uint64_t * next_key_sequential(){
+        *key_buf =  multiplicative_hash(current_id);
+        return key_buf;
+    }
+
+    uint64_t * next_val(){
+        val_buf = reinterpret_cast<uint64_t *>(const_cast<char *>(&(VALUE_POOL[uniformRandom.uniform_within_32(0, sizeof(VALUE_POOL)-
+                                                                                                                  sizeof(uint64_t))])));
+        return val_buf;
     }
 
     void set_current_id(uint64_t t) { current_id = t; }
     uint64_t get_current_id(){ return current_id; }
     void set_seed(uint64_t seed){ uniformRandom.set_current_seed(seed); }
+    uint64_t get_seed() {uniformRandom.get_current_seed();}
 
 private:
     static thread_local uint64_t current_id;
 
     static thread_local foedus::assorted::UniformRandom uniformRandom;
+
+    static thread_local uint64_t * key_buf;
+    static thread_local uint64_t * val_buf;
 
     inline uint64_t multiplicative_hash(uint64_t x)
     {
@@ -104,32 +104,44 @@ public:
 
 thread_local foedus::assorted::UniformRandom kv_generator::uniformRandom;
 thread_local uint64_t kv_generator::current_id;
+thread_local uint64_t * kv_generator::key_buf = new uint64_t ;
+thread_local uint64_t * kv_generator::val_buf = new uint64_t ;
 
-void thread_insert(FPtree & tree, std::vector<uint64_t> arrKeys, std::vector<uint64_t> arrVals, uint64_t num_op , uint16_t num_thread ,uint64_t id){
+
+void thread_insert(FPtree & tree, kv_generator & generator,uint64_t num_op , uint16_t num_thread ,uint64_t id){
     uint64_t workload = num_op / num_thread , stop;
     if (id == num_thread - 1)	// last thread, load all keys left
         stop = num_op;
     else	// just normal workload
         stop = (id + 1) * workload;
 
+    generator.set_seed(time(nullptr) * (id+1));
+    generator.set_current_id(id * workload + 1);
+
     for (uint64_t i = id * workload; i < stop; ++i)
-        if (!tree.insert(KV(arrKeys[i],arrVals[i])))
+        if (!tree.insert(KV(*generator.next_key_sequential(),*generator.next_val())))
         {
-            printf("Insert failed! Key: %llu Value: %llu\n", arrKeys[i],arrVals[i]);
+            //printf("Insert failed! Key: %llu Value: %llu\n", arrKeys[i],arrVals[i]);
+            printf("Insert failed!\n");
             exit(1);
         }
 }
 
-void thread_read(FPtree & tree, std::vector<uint64_t> arrKeys, uint64_t num_op , uint16_t num_thread ,uint64_t id){
+void thread_read(FPtree & tree, kv_generator & generator, uint64_t num_op , uint16_t num_thread ,uint64_t id){
     uint64_t workload = num_op / num_thread , stop;
     if (id == num_thread - 1)	// last thread, load all keys left
         stop = num_op;
     else	// just normal workload
         stop = (id + 1) * workload;
 
+    generator.set_seed(time(nullptr)*(id+1));
+    std::cout << "Thread" <<id <<"-Seed:"<<generator.get_seed() << std::endl;
+
     for(uint64_t i = id*workload; i < stop ; ++i){
-        if(!tree.find(arrKeys[i])){
-            printf("Read failed! Key: %llu\n",arrKeys[i]);
+        if(!tree.find(*generator.next_key_random())){
+            //printf("Read failed! Key: %llu\n",arrKeys[i]);
+            printf("Read failed!\n");
+            exit(1);
         }
     }
 }
@@ -193,47 +205,30 @@ int main(int argc, char**argv){
     // Insert
 
     if(!opt.skip_load()){
-        std::vector<uint64_t> insert_arrKeys(opt.num_insert());
-        std::vector<uint64_t> insert_arrVals(opt.num_insert());
-
-        uint64_t workload = opt.num_insert() / t_num ;
-
-        generator.set_seed(static_cast<uint64_t>(time(nullptr)));
-        generator.pre_generate_Keys( insert_arrKeys, opt.num_insert(), true);
-        generator.set_seed(static_cast<uint64_t>(time(nullptr)));
-        generator.pre_generate_Values(insert_arrVals,opt.num_insert());
-
         auto start = std::chrono::high_resolution_clock::now();
         for (uint64_t i = 0; i < t_num; ++i)
-            workers[i] = std::thread(thread_insert, std::ref(fptree), std::ref(insert_arrKeys), std::ref(insert_arrVals), opt.num_insert(), t_num, i);
+            workers[i] = std::thread(thread_insert, std::ref(fptree), std::ref(generator), opt.num_insert(), t_num, i);
         for (uint64_t i = 0; i < t_num; i++)
             workers[i].join();
         auto end = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
         std::cout << "Insert-" << opt.num_insert() << ":" << duration.count() << " milliseconds" << std::endl;
-        std::vector<uint64_t>().swap(insert_arrKeys);
-        std::vector<uint64_t>().swap(insert_arrVals);
     }
 
 
 
     // Read
 
-    std::vector<uint64_t> read_arrKeys(opt.num_search());
-    generator.set_seed(static_cast<uint64_t>(time(nullptr)));
-    generator.pre_generate_Keys(read_arrKeys, opt.num_search(), false);
+    generator.set_current_id(opt.num_insert()+1);
 
     auto start = std::chrono::high_resolution_clock::now();
     for (uint64_t i = 0; i < t_num; ++i)
-        workers[i] = std::thread(thread_read, std::ref(fptree), std::ref(read_arrKeys) ,opt.num_search(), t_num, i);
+        workers[i] = std::thread(thread_read, std::ref(fptree), std::ref(generator) ,opt.num_search(), t_num, i);
     for (uint64_t i = 0; i < t_num; i++)
         workers[i].join();
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
     std::cout << "Read-" << opt.num_search() << ":" << duration.count() << " milliseconds" << std::endl;
-    std::vector<uint64_t>().swap(read_arrKeys);
-
-
 
 }
 
