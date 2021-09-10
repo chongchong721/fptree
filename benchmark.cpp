@@ -53,6 +53,8 @@ public:
     uint64_t get_current_id(){ return current_id; }
     void set_seed(uint64_t seed){ uniformRandom.set_current_seed(seed); }
     uint64_t get_seed() {return uniformRandom.get_current_seed();}
+    void set_num_inserted(uint64_t num){num_inserted=num;}
+    uint64_t get_num_inserted(){return num_inserted;}
 
 private:
     static thread_local uint64_t current_id;
@@ -61,6 +63,8 @@ private:
 
     static thread_local uint64_t * key_buf;
     static thread_local uint64_t * val_buf;
+
+    uint64_t num_inserted;
 
     inline uint64_t multiplicative_hash(uint64_t x)
     {
@@ -136,7 +140,7 @@ void thread_read(FPtree & tree, kv_generator & generator, uint64_t num_op , uint
         stop = num_op;
     else	// just normal workload
         stop = (id + 1) * workload;
-
+    generator.set_current_id(generator.get_num_inserted()+1);
     std::cout << "Thread"<<id<<"-current_id"<<generator.get_current_id()<<std::endl;
     generator.set_seed(time(nullptr)*(id+1));
     std::cout << "Thread" <<id <<"-Seed:"<<generator.get_seed() << std::endl;
@@ -225,6 +229,7 @@ int main(int argc, char**argv){
     // Read
 
     generator.set_current_id(opt.num_insert()+1);
+    generator.set_num_inserted(opt.num_insert());
 
     auto start = std::chrono::high_resolution_clock::now();
     for (uint64_t i = 0; i < t_num; ++i)
