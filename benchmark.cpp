@@ -137,10 +137,9 @@ void thread_read(FPtree & tree, kv_generator & generator, uint64_t num_op , uint
         stop = num_op;
     else	// just normal workload
         stop = (id + 1) * workload;
+
     generator.set_current_id(generator.get_num_inserted()+1);
-    std::cout << "Thread"<<id<<"-current_id"<<generator.get_current_id()<<std::endl;
     generator.set_seed(time(nullptr)*(id+1));
-    std::cout << "Thread" <<id <<"-Seed:"<<generator.get_seed() << std::endl;
 
     for(uint64_t i = id*workload; i < stop ; ++i){
         if(!tree.find(*generator.next_key_random())){
