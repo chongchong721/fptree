@@ -31,10 +31,7 @@ public:
 
 
     uint64_t * next_key_random(){
-        auto tmp = uniformRandom.uniform_within_64(1,current_id-1);
-        std::cout << "searching ID" << tmp << std::endl;
-        *key_buf = multiplicative_hash(tmp);
-        std::cout << "ID" << tmp << "after hashing:" << *key_buf <<std::endl;
+        *key_buf = multiplicative_hash(uniformRandom.uniform_within_64(1,current_id-1));
         return key_buf;
     }
 
@@ -203,9 +200,11 @@ int main(int argc, char**argv){
     }
 
 
-
+    auto start = std::chrono::high_resolution_clock::now();
     FPtree fptree;
-    std::cout << "Tree initialized" << std::endl;
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(end-start);
+    std::cout << "FPTree initialization:" << duration.count() << " seconds" << std::endl;
     std::vector<std::thread> workers(t_num);
 
     //fptree.printFPTree("",fptree.getRoot());
@@ -220,8 +219,8 @@ int main(int argc, char**argv){
         for (uint64_t i = 0; i < t_num; i++)
             workers[i].join();
         auto end = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-        std::cout << "Insert-" << opt.num_insert() << ":" << duration.count() << " milliseconds" << std::endl;
+        auto duration = std::chrono::duration_cast<std::chrono::seconds>(end-start);
+        std::cout << "Insert-" << opt.num_insert() << ":" << duration.count() << " seconds" << std::endl;
     }
 
 
@@ -231,14 +230,14 @@ int main(int argc, char**argv){
     generator.set_current_id(opt.num_insert()+1);
     generator.set_num_inserted(opt.num_insert());
 
-    auto start = std::chrono::high_resolution_clock::now();
+    start = std::chrono::high_resolution_clock::now();
     for (uint64_t i = 0; i < t_num; ++i)
         workers[i] = std::thread(thread_read, std::ref(fptree), std::ref(generator) ,opt.num_search(), t_num, i);
     for (uint64_t i = 0; i < t_num; i++)
         workers[i].join();
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-    std::cout << "Read-" << opt.num_search() << ":" << duration.count() << " milliseconds" << std::endl;
+    end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::seconds>(end-start);
+    std::cout << "Read-" << opt.num_search() << ":" << duration.count() << " seconds" << std::endl;
 
 }
 
