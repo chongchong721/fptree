@@ -31,7 +31,10 @@ public:
 
 
     uint64_t * next_key_random(){
-        *key_buf = multiplicative_hash(uniformRandom.uniform_within_64(1,current_id-1));
+        auto tmp = uniformRandom.uniform_within_64(1,current_id-1);
+        std::cout << "searching ID" << tmp << std::endl;
+        *key_buf = multiplicative_hash(tmp);
+        std::cout << "ID" << tmp << "after hashing:" << *key_buf <<std::endl;
         return key_buf;
     }
 
@@ -134,6 +137,7 @@ void thread_read(FPtree & tree, kv_generator & generator, uint64_t num_op , uint
     else	// just normal workload
         stop = (id + 1) * workload;
 
+    std::cout << "Thread"<<id<<"-current_id"<<generator.get_current_id()<<std::endl;
     generator.set_seed(time(nullptr)*(id+1));
     std::cout << "Thread" <<id <<"-Seed:"<<generator.get_seed() << std::endl;
 
