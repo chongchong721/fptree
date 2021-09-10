@@ -201,6 +201,7 @@ int main(int argc, char**argv){
 
 
     FPtree fptree;
+    std::cout << "Tree initialized" << std::endl;
     std::vector<std::thread> workers(t_num);
 
     //fptree.printFPTree("",fptree.getRoot());
