@@ -49,7 +49,7 @@ public:
     void set_current_id(uint64_t t) { current_id = t; }
     uint64_t get_current_id(){ return current_id; }
     void set_seed(uint64_t seed){ uniformRandom.set_current_seed(seed); }
-    uint64_t get_seed() {uniformRandom.get_current_seed();}
+    uint64_t get_seed() {return uniformRandom.get_current_seed();}
 
 private:
     static thread_local uint64_t current_id;
