@@ -36,7 +36,7 @@ public:
     }
 
     uint64_t * next_key_sequential(){
-        *key_buf =  multiplicative_hash(current_id);
+        *key_buf =  multiplicative_hash(current_id++);
         return key_buf;
     }
 
