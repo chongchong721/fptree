@@ -30,6 +30,7 @@
 #include <cassert>
 #include <thread>
 #include <boost/lockfree/queue.hpp>
+#include <chrono>
 
 #ifdef TEST_MODE
     #define MAX_INNER_SIZE 3

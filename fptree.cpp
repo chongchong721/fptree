@@ -220,8 +220,13 @@ FPtree::FPtree()
                 perror("failed to open pool\n");
             else 
             {
+                std::cout << "Start recovering from pool" << std::endl;
+                auto start = std::chrono::high_resolution_clock::now();
                 recover();
                 bulkLoad(1);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
+                std::cout << "Recover from pool:" << duration.count() << " milliseconds" << std::endl;
             }
         }
         root_LogArray = POBJ_ROOT(pop, struct Log);  // Avoid push root object to Queue, i = 1
